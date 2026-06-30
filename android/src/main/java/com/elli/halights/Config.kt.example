@@ -1,0 +1,19 @@
+package com.elli.halights
+
+/**
+ * Copy this file to Config.kt and fill in your own values.
+ * Config.kt is gitignored so your token never gets committed.
+ *
+ * HA_TOKEN: Home Assistant -> Profile -> Long-Lived Access Tokens -> Create.
+ */
+object Config {
+    const val HA_URL   = "https://your-home-assistant.example.com"
+    const val HA_TOKEN = "PASTE_YOUR_LONG_LIVED_ACCESS_TOKEN"
+
+    // HTTP request timeout to HA
+    const val HTTP_TIMEOUT_SEC = 10L
+
+    // Trust a self-signed SSL certificate (skip chain/hostname checks).
+    // true is fine for your own home network; use false + a real cert for production.
+    const val ALLOW_SELF_SIGNED = true
+}

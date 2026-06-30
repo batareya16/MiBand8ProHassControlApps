@@ -1,0 +1,157 @@
+<template>
+  <div class="page">
+
+    <div class="header">
+      <text class="back" onclick="goBack">‹</text>
+      <text class="title">Birds light</text>
+    </div>
+
+    <div class="row3">
+      <div class="btn btn-danger {{activeCmd === 'off'    ? 'btn-active-danger' : ''}}" onclick="send('off')">
+        <text class="btn-label">Off</text>
+      </div>
+      <div class="btn {{activeCmd === 'on'     ? 'btn-active' : ''}}" onclick="send('on')">
+        <text class="btn-label">On</text>
+      </div>
+      <div class="btn {{activeCmd === 'steady' ? 'btn-active' : ''}}" onclick="send('steady')">
+        <text class="btn-label">Steady</text>
+      </div>
+    </div>
+
+    <div class="section-label">
+      <text class="section-text">Modes</text>
+    </div>
+
+    <div class="grid">
+      <div class="btn {{activeCmd === 'mode1' ? 'btn-active' : ''}}" onclick="send('mode1')">
+        <text class="btn-label">1</text>
+      </div>
+      <div class="btn {{activeCmd === 'mode2' ? 'btn-active' : ''}}" onclick="send('mode2')">
+        <text class="btn-label">2</text>
+      </div>
+      <div class="btn {{activeCmd === 'mode3' ? 'btn-active' : ''}}" onclick="send('mode3')">
+        <text class="btn-label">3</text>
+      </div>
+      <div class="btn {{activeCmd === 'mode4' ? 'btn-active' : ''}}" onclick="send('mode4')">
+        <text class="btn-label">4</text>
+      </div>
+      <div class="btn {{activeCmd === 'mode5' ? 'btn-active' : ''}}" onclick="send('mode5')">
+        <text class="btn-label">5</text>
+      </div>
+      <div class="btn {{activeCmd === 'mode6' ? 'btn-active' : ''}}" onclick="send('mode6')">
+        <text class="btn-label">6</text>
+      </div>
+    </div>
+
+    <div class="row3 row3-bottom">
+      <div class="btn {{activeCmd === 'mode7' ? 'btn-active' : ''}}" onclick="send('mode7')">
+        <text class="btn-label">7</text>
+      </div>
+      <div class="btn" onclick="send('dimDown')">
+        <text class="btn-label">Dim –</text>
+      </div>
+      <div class="btn" onclick="send('dimUp')">
+        <text class="btn-label">Dim +</text>
+      </div>
+    </div>
+
+    <div class="error-banner" show="{{errorMsg !== ''}}">
+      <text class="error-text">{{errorMsg}}</text>
+    </div>
+
+  </div>
+</template>
+
+<style>
+  .page {
+    width: 194px;
+    min-height: 368px;
+    background-color: #0a0a14;
+    flex-direction: column;
+  }
+  .header {
+    flex-direction: row;
+    align-items: center;
+    padding: 14px 16px 10px;
+    gap: 8px;
+  }
+  .back { font-size: 22px; color: rgba(255,255,255,0.5); padding-right: 4px; }
+  .title { font-size: 17px; font-weight: bold; color: rgba(255,255,255,0.9); }
+  .section-label { padding: 8px 14px 4px; }
+  .section-text {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.3);
+  }
+  .row3 {
+    flex-direction: row;
+    gap: 7px;
+    padding: 0 14px;
+    margin-bottom: 7px;
+  }
+  .row3-bottom { margin-top: 6px; }
+  .grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 0 14px;
+  }
+  .btn {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 10px 4px;
+    border-width: 1px;
+    border-color: rgba(255,255,255,0.08);
+    gap: 3px;
+  }
+  .btn-icon { font-size: 15px; }
+  .btn-label { font-size: 11px; color: rgba(255,255,255,0.7); text-align: center; }
+  .btn-active {
+    background-color: rgba(120,180,255,0.18);
+    border-color: rgba(120,180,255,0.4);
+  }
+  .btn-danger { background-color: rgba(255,255,255,0.07); }
+  .btn-active-danger {
+    background-color: rgba(255,80,80,0.15);
+    border-color: rgba(255,80,80,0.35);
+  }
+  .error-banner {
+    margin: 8px 14px 0;
+    background-color: rgba(255,80,80,0.12);
+    border-radius: 10px;
+    padding: 7px 12px;
+  }
+  .error-text { font-size: 11px; color: rgba(255,100,100,0.9); text-align: center; }
+</style>
+
+<script>
+import router from '@system.router';
+import { sendIR, channelState } from '../../bridge';
+import { IR_CODES } from '../../constants';
+
+const STATELESS = ['dimDown', 'dimUp'];
+
+export default {
+  data: {
+    activeCmd: '',
+    errorMsg:  '',
+  },
+
+  async send(cmd) {
+    this.errorMsg = '';
+    if (!STATELESS.includes(cmd)) this.activeCmd = cmd;
+    try {
+      await sendIR(IR_CODES[cmd]);
+    } catch (e) {
+      this.errorMsg = (e.message || 'fail') + ' :: ' + channelState();
+    }
+  },
+
+  goBack() { router.back(); },
+};
+</script>

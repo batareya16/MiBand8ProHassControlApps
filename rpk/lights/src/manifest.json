@@ -1,0 +1,32 @@
+{
+  "package": "com.elli.halights",
+  "name": "HA Lights",
+  "versionName": "1.0.4",
+  "versionCode": 5,
+  "minPlatformVersion": 1000,
+  "icon": "/common/logo.png",
+  "deviceTypeList": [
+    "watch"
+  ],
+  "features": [
+    { "name": "system.router" },
+    { "name": "system.interconnect" },
+    { "name": "system.permission.VIBRATE" }
+  ],
+  "config": {
+    "logLevel": "log",
+    "designWidth": 194
+  },
+  "router": {
+    "entry": "pages/lights",
+    "pages": {
+      "pages/lights":      { "component": "index" },
+      "pages/floor-lamp":  { "component": "index" },
+      "pages/birds-light": { "component": "index" }
+    }
+  },
+  "display": {
+    "titleBarEnabled": false,
+    "backgroundColor": "#0a0a14"
+  }
+}

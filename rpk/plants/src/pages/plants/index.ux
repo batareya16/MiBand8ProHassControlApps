@@ -1,0 +1,172 @@
+<template>
+  <div class="page">
+
+    <div class="header">
+      <text class="title">Plants</text>
+      <text class="refresh" onclick="loadAll">Refresh</text>
+    </div>
+
+    <div class="loading" if="{{loading}}">
+      <text class="loading-text">{{loadingMsg}}</text>
+    </div>
+
+    <div class="list" show="{{!loading}}">
+
+      <!-- Strawberry -->
+      <div class="card">
+        <text class="card-name">Strawberry</text>
+        <div class="metrics">
+          <div class="metric">
+            <text class="metric-label">Soil</text>
+            <text class="metric-value">{{strawMoist}}</text>
+          </div>
+          <div class="metric">
+            <text class="metric-label">Temp</text>
+            <text class="metric-value">{{strawTemp}}</text>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sage -->
+      <div class="card">
+        <text class="card-name">Sage</text>
+        <div class="metrics">
+          <div class="metric">
+            <text class="metric-label">Humidity</text>
+            <text class="metric-value">{{sageHum}}</text>
+          </div>
+          <div class="metric">
+            <text class="metric-label">Temp</text>
+            <text class="metric-value">{{sageTemp}}</text>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="error-banner" show="{{errorMsg !== ''}}">
+      <text class="error-text">{{errorMsg}}</text>
+    </div>
+
+  </div>
+</template>
+
+<style>
+  .page {
+    width: 194px;
+    min-height: 368px;
+    background-color: #0a0a14;
+    flex-direction: column;
+  }
+  .header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px 4px;
+  }
+  .title {
+    font-size: 20px;
+    font-weight: bold;
+    color: rgba(255,255,255,0.9);
+  }
+  .refresh {
+    font-size: 18px;
+    color: rgba(255,255,255,0.4);
+    padding: 4px;
+  }
+  .loading { align-items: center; justify-content: center; padding: 16px 0; }
+  .loading-text { color: rgba(255,255,255,0.35); font-size: 12px; }
+  .list { flex-direction: column; padding: 4px 12px; }
+  .card {
+    flex-direction: column;
+    background-color: rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .card-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 8px;
+  }
+  .metrics { flex-direction: row; justify-content: space-between; }
+  .metric { flex-direction: column; align-items: center; flex: 1; }
+  .metric-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 2px;
+  }
+  .metric-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: rgba(120,200,140,0.95);
+  }
+  .error-banner {
+    margin: 10px 14px;
+    background-color: rgba(255,80,80,0.12);
+    border-radius: 10px;
+    padding: 8px 12px;
+  }
+  .error-text {
+    font-size: 11px;
+    color: rgba(255,100,100,0.9);
+    text-align: center;
+  }
+</style>
+
+<script>
+import { getStates, channelState } from '../../bridge';
+import { SENSORS } from '../../constants';
+
+export default {
+  data: {
+    loading:    true,
+    loadingMsg: 'Connecting...',
+    strawMoist: '—',
+    strawTemp:  '—',
+    sageHum:    '—',
+    sageTemp:   '—',
+    errorMsg:   '',
+  },
+
+  onInit() {
+    this.loadAll();
+  },
+
+  async loadAll() {
+    this.loading    = true;
+    this.loadingMsg = 'Loading...';
+    this.errorMsg   = '';
+    try {
+      const states = await getStates([
+        SENSORS.strawberryMoisture,
+        SENSORS.strawberryTemp,
+        SENSORS.sageHumidity,
+        SENSORS.sageTemp,
+      ]);
+      const byId = {};
+      states.forEach(s => { byId[s.entity_id] = s; });
+
+      this.strawMoist = this._fmt(byId[SENSORS.strawberryMoisture], '%');
+      this.strawTemp  = this._fmt(byId[SENSORS.strawberryTemp], '°');
+      this.sageHum    = this._fmt(byId[SENSORS.sageHumidity], '%');
+      this.sageTemp   = this._fmt(byId[SENSORS.sageTemp], '°');
+    } catch (e) {
+      this.errorMsg = (e.message || 'fail') + ' :: ' + channelState();
+    }
+    this.loading = false;
+  },
+
+  _fmt(s, fallbackUnit) {
+    if (!s || s.state === undefined || s.state === null
+        || s.state === 'unavailable' || s.state === 'unknown') return '—';
+    let v = s.state;
+    const n = Math.round(parseFloat(v));
+    if (!isNaN(n)) v = String(n);
+    const u = (s.attributes && s.attributes.unit_of_measurement)
+      ? s.attributes.unit_of_measurement : fallbackUnit;
+    return v + u;
+  },
+};
+</script>

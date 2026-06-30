@@ -1,0 +1,30 @@
+{
+  "package": "com.elli.plants",
+  "name": "Plants",
+  "versionName": "1.0.1",
+  "versionCode": 2,
+  "minPlatformVersion": 1000,
+  "icon": "/common/logo.png",
+  "deviceTypeList": [
+    "watch"
+  ],
+  "features": [
+    { "name": "system.router" },
+    { "name": "system.interconnect" },
+    { "name": "system.permission.VIBRATE" }
+  ],
+  "config": {
+    "logLevel": "log",
+    "designWidth": 194
+  },
+  "router": {
+    "entry": "pages/plants",
+    "pages": {
+      "pages/plants": { "component": "index" }
+    }
+  },
+  "display": {
+    "titleBarEnabled": false,
+    "backgroundColor": "#0a0a14"
+  }
+}

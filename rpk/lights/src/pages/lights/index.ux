@@ -1,0 +1,323 @@
+<template>
+  <div class="page">
+
+    <div class="header">
+      <text class="title">Lights</text>
+      <text class="refresh" onclick="loadAll">Refresh</text>
+    </div>
+
+    <div class="loading" if="{{loading}}">
+      <text class="loading-text">{{loadingMsg}}</text>
+    </div>
+
+    <div class="list" show="{{!loading}}">
+
+      <!-- Floor lamp -->
+      <div class="row" onclick="goFloorLamp">
+        <div class="row-left">
+          <div class="row-labels">
+            <text class="row-name">Floor lamp</text>
+            <text class="row-sub">{{floorLampMode}}</text>
+          </div>
+        </div>
+        <div class="toggle {{floorLampOn ? 'toggle-on' : ''}}" onclick="toggleFloorLamp">
+          <div class="thumb"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+
+      <!-- Harry Potter -->
+      <div class="row">
+        <div class="row-left">
+          <text class="row-name">Harry Potter</text>
+        </div>
+        <div class="toggle {{harryOn ? 'toggle-on' : ''}}" onclick="toggleHarry">
+          <div class="thumb"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+
+      <!-- Cafe house -->
+      <div class="row">
+        <div class="row-left">
+          <text class="row-name">Cafe house</text>
+        </div>
+        <div class="toggle {{cafeOn ? 'toggle-on' : ''}}" onclick="toggleCafe">
+          <div class="thumb"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+
+      <!-- Space projector -->
+      <div class="row">
+        <div class="row-left">
+          <text class="row-name">Space projector</text>
+        </div>
+        <div class="btn-press" onclick="pressProjector">
+          <text class="btn-press-label">Press</text>
+        </div>
+      </div>
+      <div class="divider"></div>
+
+      <!-- Birds light -->
+      <div class="row" onclick="goBirdsLight">
+        <div class="row-left">
+          <div class="row-labels">
+            <text class="row-name">Birds light</text>
+            <text class="row-sub">tap for modes</text>
+          </div>
+        </div>
+        <div class="toggle {{birdsOn ? 'toggle-on' : ''}}" onclick="toggleBirds">
+          <div class="thumb"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Error banner -->
+    <div class="error-banner" show="{{errorMsg !== ''}}">
+      <text class="error-text">{{errorMsg}}</text>
+    </div>
+
+  </div>
+</template>
+
+<style>
+  .page {
+    width: 194px;
+    min-height: 368px;
+    background-color: #0a0a14;
+    flex-direction: column;
+  }
+  .header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px 2px;
+  }
+  .title {
+    font-size: 20px;
+    font-weight: bold;
+    color: rgba(255,255,255,0.9);
+  }
+  .refresh {
+    font-size: 18px;
+    color: rgba(255,255,255,0.4);
+    padding: 4px;
+  }
+  .loading {
+    align-items: center;
+    justify-content: center;
+    padding: 16px 0;
+  }
+  .loading-text {
+    color: rgba(255,255,255,0.35);
+    font-size: 12px;
+  }
+  .list { flex-direction: column; }
+  .row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 16px;
+    min-height: 46px;
+  }
+  .row-left {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+  .row-icon { font-size: 20px; width: 26px; text-align: center; }
+  .row-labels { flex-direction: column; }
+  .row-name {
+    font-size: 14px;
+    color: rgba(255,255,255,0.88);
+    font-weight: 500;
+  }
+  .row-sub {
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+    margin-top: 2px;
+  }
+  .divider {
+    height: 1px;
+    background-color: rgba(255,255,255,0.07);
+    margin: 0 16px;
+  }
+  .toggle {
+    width: 40px;
+    height: 22px;
+    border-radius: 11px;
+    background-color: rgba(255,255,255,0.15);
+    padding: 3px;
+    justify-content: flex-start;
+  }
+  .toggle-on {
+    background-color: rgba(120,180,255,0.75);
+    justify-content: flex-end;
+  }
+  .thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    background-color: #ffffff;
+  }
+  .btn-press {
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 6px 12px;
+  }
+  .btn-press-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.65);
+  }
+  .error-banner {
+    margin: 10px 14px;
+    background-color: rgba(255,80,80,0.12);
+    border-radius: 10px;
+    padding: 8px 12px;
+  }
+  .error-text {
+    font-size: 11px;
+    color: rgba(255,100,100,0.9);
+    text-align: center;
+  }
+</style>
+
+<script>
+import router from '@system.router';
+import { getStates, callService, sendIR, channelState } from '../../bridge';
+import { ENTITIES, SCRIPTS, IR_CODES } from '../../constants';
+
+export default {
+  data: {
+    loading:      true,
+    loadingMsg:   'Connecting...',
+    floorLampOn:  false,
+    floorLampMode:'—',
+    harryOn:      false,
+    cafeOn:       false,
+    birdsOn:      false,
+    errorMsg:     '',
+  },
+
+  onInit() {
+    this.loadAll();
+  },
+
+  async loadAll() {
+    this.loading    = true;
+    this.loadingMsg = 'Loading...';
+    this.errorMsg   = '';
+    try {
+      const states = await getStates([
+        ENTITIES.floorLamp,
+        ENTITIES.harryPotter,
+        ENTITIES.cafeHouse,
+        ENTITIES.birdsLight,
+      ]);
+      // states — an array of [{entity_id, state, attributes}, ...]
+      const byId = {};
+      states.forEach(s => { byId[s.entity_id] = s; });
+
+      const lamp  = byId[ENTITIES.floorLamp]   || {};
+      const harry = byId[ENTITIES.harryPotter]  || {};
+      const cafe  = byId[ENTITIES.cafeHouse]    || {};
+      const birds = byId[ENTITIES.birdsLight]   || {};
+
+      this.floorLampOn   = lamp.state  === 'on';
+      this.harryOn       = harry.state === 'on';
+      this.cafeOn        = cafe.state  === 'on';
+      this.birdsOn       = birds.state !== 'off';
+      this.floorLampMode = this._lampLabel(lamp);
+    } catch (e) {
+      // diagnosis() is unreliable on Band 8 Pro — show the real channel state instead
+      this.errorMsg = (e.message || 'fail') + ' :: ' + channelState();
+    }
+    this.loading = false;
+  },
+
+  _lampLabel(data) {
+    if (!data.state || data.state === 'off') return 'Off';
+    const k = data.attributes && data.attributes.color_temp_kelvin;
+    if (!k) return 'On';
+    if (k <= 2300) return 'Dim';
+    if (k <= 2900) return 'Warm';
+    if (k <= 4500) return 'Bright';
+    return 'Cool';
+  },
+
+  async toggleFloorLamp(e) {
+    e.stopPropagation();
+    this.errorMsg = '';
+    const wasOn = this.floorLampOn;
+    this.floorLampOn = !wasOn;
+    if (!this.floorLampOn) this.floorLampMode = 'Off';
+    try {
+      await callService('light', wasOn ? 'turn_off' : 'turn_on', {
+        entity_id: ENTITIES.floorLamp,
+      });
+    } catch (e) {
+      this.floorLampOn = wasOn; // rollback
+      this.errorMsg = 'Failed';
+    }
+  },
+
+  async toggleHarry(e) {
+    e.stopPropagation();
+    this.errorMsg = '';
+    const wasOn = this.harryOn;
+    this.harryOn = !wasOn;
+    try {
+      await callService('script', 'turn_on', {
+        entity_id: wasOn ? SCRIPTS.harryOff : SCRIPTS.harryOn,
+      });
+    } catch (e) {
+      this.harryOn = wasOn;
+      this.errorMsg = 'Failed';
+    }
+  },
+
+  async toggleCafe(e) {
+    e.stopPropagation();
+    this.errorMsg = '';
+    const wasOn = this.cafeOn;
+    this.cafeOn = !wasOn;
+    try {
+      await callService('script', 'turn_on', {
+        entity_id: wasOn ? SCRIPTS.cafeOff : SCRIPTS.cafeOn,
+      });
+    } catch (e) {
+      this.cafeOn = wasOn;
+      this.errorMsg = 'Failed';
+    }
+  },
+
+  async pressProjector(e) {
+    e.stopPropagation();
+    this.errorMsg = '';
+    try {
+      await callService('button', 'press', { entity_id: ENTITIES.spaceProjector });
+    } catch (e) {
+      this.errorMsg = 'Failed';
+    }
+  },
+
+  async toggleBirds(e) {
+    e.stopPropagation();
+    this.errorMsg = '';
+    const wasOn = this.birdsOn;
+    this.birdsOn = !wasOn;
+    try {
+      await sendIR(wasOn ? IR_CODES.off : IR_CODES.on);
+    } catch (e) {
+      this.birdsOn = wasOn;
+      this.errorMsg = 'Failed';
+    }
+  },
+
+  goFloorLamp()  { router.push({ uri: 'pages/floor-lamp'  }); },
+  goBirdsLight() { router.push({ uri: 'pages/birds-light' }); },
+};
+</script>

@@ -1,0 +1,203 @@
+<template>
+  <div class="page">
+
+    <div class="header">
+      <text class="back" onclick="goBack">‹</text>
+      <text class="title">Floor lamp</text>
+      <div class="status-dot {{lampOn ? 'dot-on' : 'dot-off'}}"></div>
+    </div>
+
+    <div class="state-row">
+      <text class="state-label">{{lampOn ? currentMode : 'Off'}}</text>
+      <text class="brightness-label" show="{{lampOn}}">{{brightness}}%</text>
+    </div>
+
+    <div class="presets">
+      <div class="preset {{activePreset === 'dim'    ? 'preset-active' : ''}}" onclick="setDim">
+        <text class="preset-name">Dim</text>
+        <text class="preset-meta">10% · 2200K</text>
+      </div>
+      <div class="preset {{activePreset === 'warm'   ? 'preset-active' : ''}}" onclick="setWarm">
+        <text class="preset-name">Warm</text>
+        <text class="preset-meta">60% · 2700K</text>
+      </div>
+      <div class="preset {{activePreset === 'bright' ? 'preset-active' : ''}}" onclick="setBright">
+        <text class="preset-name">Bright</text>
+        <text class="preset-meta">100% · 4000K</text>
+      </div>
+      <div class="preset {{activePreset === 'cool'   ? 'preset-active' : ''}}" onclick="setCool">
+        <text class="preset-name">Cool</text>
+        <text class="preset-meta">100% · 6500K</text>
+      </div>
+    </div>
+
+    <div class="btn-off {{!lampOn ? 'btn-off-active' : ''}}" onclick="turnOff">
+      <text class="btn-off-label">Off</text>
+    </div>
+
+    <div class="error-banner" show="{{errorMsg !== ''}}">
+      <text class="error-text">{{errorMsg}}</text>
+    </div>
+
+  </div>
+</template>
+
+<style>
+  .page {
+    width: 194px;
+    min-height: 368px;
+    background-color: #0a0a14;
+    flex-direction: column;
+  }
+  .header {
+    flex-direction: row;
+    align-items: center;
+    padding: 14px 16px 8px;
+    gap: 8px;
+  }
+  .back {
+    font-size: 22px;
+    color: rgba(255,255,255,0.5);
+    padding-right: 4px;
+  }
+  .title {
+    font-size: 17px;
+    font-weight: bold;
+    color: rgba(255,255,255,0.9);
+    flex: 1;
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 4px; }
+  .dot-on  { background-color: #78b4ff; }
+  .dot-off { background-color: rgba(255,255,255,0.2); }
+  .state-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px 12px;
+  }
+  .state-label { font-size: 13px; color: rgba(255,255,255,0.4); }
+  .brightness-label { font-size: 13px; color: rgba(120,180,255,0.7); }
+  .presets {
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 14px;
+    flex: 1;
+  }
+  .preset {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    background-color: rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 12px 14px;
+    border-width: 1px;
+    border-color: rgba(255,255,255,0.08);
+  }
+  .preset-active {
+    background-color: rgba(120,180,255,0.14);
+    border-color: rgba(120,180,255,0.4);
+  }
+  .preset-icon { font-size: 18px; width: 24px; text-align: center; }
+  .preset-name { font-size: 14px; color: rgba(255,255,255,0.88); font-weight: 500; flex: 1; }
+  .preset-meta { font-size: 10px; color: rgba(255,255,255,0.3); }
+  .btn-off {
+    margin: 12px 14px 14px;
+    background-color: rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 13px;
+    align-items: center;
+    border-width: 1px;
+    border-color: rgba(255,255,255,0.08);
+  }
+  .btn-off-active {
+    background-color: rgba(255,100,100,0.12);
+    border-color: rgba(255,100,100,0.3);
+  }
+  .btn-off-label { font-size: 14px; color: rgba(255,255,255,0.55); font-weight: 500; }
+  .error-banner {
+    margin: 0 14px 10px;
+    background-color: rgba(255,80,80,0.12);
+    border-radius: 10px;
+    padding: 7px 12px;
+  }
+  .error-text { font-size: 11px; color: rgba(255,100,100,0.9); text-align: center; }
+</style>
+
+<script>
+import router from '@system.router';
+import { getStates, callService, channelState } from '../../bridge';
+import { ENTITIES } from '../../constants';
+
+export default {
+  data: {
+    lampOn:       false,
+    brightness:   0,
+    activePreset: '',
+    currentMode:  '—',
+    errorMsg:     '',
+  },
+
+  onInit() {
+    this.loadState();
+  },
+
+  async loadState() {
+    try {
+      const states = await getStates([ENTITIES.floorLamp]);
+      const data   = states[0] || {};
+      this.lampOn    = data.state === 'on';
+      const b        = data.attributes && data.attributes.brightness;
+      this.brightness = b ? Math.round(b / 2.55) : 0;
+      this._detectPreset(data.attributes || {});
+    } catch (e) {
+      this.errorMsg = (e.message || 'fail') + ' :: ' + channelState();
+    }
+  },
+
+  _detectPreset(attr) {
+    const k = attr.color_temp_kelvin;
+    if (!k) { this.activePreset = ''; this.currentMode = 'On'; return; }
+    if (k <= 2300) { this.activePreset = 'dim';    this.currentMode = 'Dim';    return; }
+    if (k <= 2900) { this.activePreset = 'warm';   this.currentMode = 'Warm';   return; }
+    if (k <= 4500) { this.activePreset = 'bright'; this.currentMode = 'Bright'; return; }
+    this.activePreset = 'cool'; this.currentMode = 'Cool';
+  },
+
+  async _applyPreset(id, brightness, kelvin, label) {
+    this.errorMsg    = '';
+    this.lampOn      = true;
+    this.activePreset = id;
+    this.currentMode = label;
+    this.brightness  = Math.round(brightness / 2.55);
+    try {
+      await callService('light', 'turn_on', {
+        entity_id:         ENTITIES.floorLamp,
+        brightness,
+        color_temp_kelvin: kelvin,
+      });
+    } catch (e) {
+      this.errorMsg = 'Failed';
+    }
+  },
+
+  setDim()    { this._applyPreset('dim',    25,  2200, 'Dim');    },
+  setWarm()   { this._applyPreset('warm',   153, 2700, 'Warm');   },
+  setBright() { this._applyPreset('bright', 255, 4000, 'Bright'); },
+  setCool()   { this._applyPreset('cool',   255, 6500, 'Cool');   },
+
+  async turnOff() {
+    this.errorMsg    = '';
+    this.lampOn      = false;
+    this.activePreset = '';
+    this.brightness  = 0;
+    this.currentMode = 'Off';
+    try {
+      await callService('light', 'turn_off', { entity_id: ENTITIES.floorLamp });
+    } catch (e) {
+      this.errorMsg = 'Failed';
+    }
+  },
+
+  goBack() { router.back(); },
+};
+</script>
